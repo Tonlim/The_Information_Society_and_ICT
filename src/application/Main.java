@@ -7,15 +7,21 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
 import javafx.application.Application;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import model.VideoModel;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonIOException;
 
 
 public class Main extends Application {
@@ -144,14 +150,23 @@ public class Main extends Application {
 			}
 			*/
 			
+			//standard javaFX initalization
 			BorderPane root = new BorderPane();
-			Scene scene = new Scene(root,400,400);
+			Scene scene = new Scene(root,1600,820);	//400, 400 default               1600,820 fullscreen kinda
 			scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
 			primaryStage.setScene(scene);
 			primaryStage.show();
 			
+			//statusMessage at bottom
 			Text statusMessage = new Text();
 			root.setBottom(statusMessage);
+			
+			//menubars at top
+			VBox top = new VBox();
+			root.setTop(top);
+			setUpMenuBars(top,statusMessage);
+			
+			/*
 			
 			new Thread(){
 				@Override
@@ -183,7 +198,7 @@ public class Main extends Application {
 				}
 			}.start();
 			
-			
+			*/
 			
 		} catch(Exception e) {
 			e.printStackTrace();
@@ -192,5 +207,61 @@ public class Main extends Application {
 	
 	public static void main(String[] args) {
 		launch(args);
+	}
+	
+	
+	/*
+	 * sets up the needed menubars in the given Vbox
+	 */
+	private void setUpMenuBars(VBox top, Text statusMessage){
+		//menubar to download videoIDs
+		HBox downloadVideoIDButtons = new HBox();
+		top.getChildren().add(downloadVideoIDButtons);
+		
+		Text downloadVideoIDDescription = new Text("Download video IDs of: ");
+		downloadVideoIDButtons.getChildren().add(downloadVideoIDDescription);
+		
+		
+		
+		addDownloadVideoIdsToHBox(downloadVideoIDButtons,"TEDtalksDirector",statusMessage);
+		addDownloadVideoIdsToHBox(downloadVideoIDButtons,"TEDxTalks",statusMessage);
+		addDownloadVideoIdsToHBox(downloadVideoIDButtons,"TEDEducation",statusMessage);
+		addDownloadVideoIdsToHBox(downloadVideoIDButtons,"TEDxYouth",statusMessage);
+		addDownloadVideoIdsToHBox(downloadVideoIDButtons,"TEDFellowsTalks",statusMessage);
+		addDownloadVideoIdsToHBox(downloadVideoIDButtons,"TEDPartners",statusMessage);
+		
+		
+	}
+	
+	/*
+	 * adds a button for the given given channelname to the given HBOX with the "download videoID" functionality
+	 */
+	private void addDownloadVideoIdsToHBox(HBox box, String channelName, Text statusMessage){
+		Button button = new Button(channelName);
+		button.setOnAction(new EventHandler<ActionEvent>(){
+			@Override
+			public void handle(ActionEvent e){
+				new Thread(){
+					public void run(){
+						try{
+							YoutubeAccess youtube = new YoutubeAccess(statusMessage);
+							ArrayList<String> temp = youtube.getVideoIdsFromChannel(channelName);
+							int size = temp.size();
+							int amount = size/5000 + 1;
+							for(int i = 0;i<amount;i++){
+								Writer writer = new FileWriter("resources/json/"+channelName+i+".json");
+								Gson gson = new GsonBuilder().create();
+								gson.toJson(temp.subList(i*5000, ( (i+1)*5000 ) > size ? size : (i+1)*5000 ), writer);
+								writer.close();						
+							}
+							System.out.println(channelName + "   " + size);
+						} catch (JsonIOException | IOException e1) {
+							e1.printStackTrace();
+						}
+					}
+				}.start();
+			}
+		});
+		box.getChildren().add(button);
 	}
 }
