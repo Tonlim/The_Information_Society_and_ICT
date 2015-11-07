@@ -2,22 +2,25 @@ package application;
 	
 import io.YoutubeAccess;
 
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Reader;
 import java.io.Writer;
 import java.util.ArrayList;
 
+import model.VideoModel;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
-import model.VideoModel;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -161,10 +164,14 @@ public class Main extends Application {
 			Text statusMessage = new Text();
 			root.setBottom(statusMessage);
 			
+			//VBox for center content
+			VBox center = new VBox();
+			root.setCenter(center);;
+			
 			//menubars at top
 			VBox top = new VBox();
 			root.setTop(top);
-			setUpMenuBars(top,statusMessage);
+			setUpMenuBars(top,center,statusMessage);
 			
 			/*
 			
@@ -213,12 +220,12 @@ public class Main extends Application {
 	/*
 	 * sets up the needed menubars in the given Vbox
 	 */
-	private void setUpMenuBars(VBox top, Text statusMessage){
+	private void setUpMenuBars(VBox top, VBox center, Text statusMessage){
 		//menubar to download videoIDs
 		HBox downloadVideoIDButtons = new HBox();
 		top.getChildren().add(downloadVideoIDButtons);
 		
-		Text downloadVideoIDDescription = new Text("Download video IDs of: ");
+		Text downloadVideoIDDescription = new Text("Download videoIDs to file of channel: ");
 		downloadVideoIDButtons.getChildren().add(downloadVideoIDDescription);
 		
 		
@@ -230,8 +237,97 @@ public class Main extends Application {
 		addDownloadVideoIdsToHBox(downloadVideoIDButtons,"TEDFellowsTalks",statusMessage);
 		addDownloadVideoIdsToHBox(downloadVideoIDButtons,"TEDPartners",statusMessage);
 		
+		HBox extractCommentsBar = new HBox();
+		top.getChildren().add(extractCommentsBar);
+		
+		addExtractCommentsButtonToHBox(extractCommentsBar,center,statusMessage);
 		
 	}
+	
+	/*
+	 * opens a section in the main window to ask for the name of a file that contains video id's to extract all data from the video
+	 */
+	private void addExtractCommentsButtonToHBox(HBox menuBox, VBox centerBox, Text statusMessage){
+		Button button = new Button("Extract data based on videoID in file");
+		button.setOnAction(new EventHandler<ActionEvent>(){
+			@Override
+			public void handle(ActionEvent e){
+				//setting up text, input field and button
+				Text instructions = new Text("Give the name of the file to proces. \nThe program will download all data for the videoIDs in the file and add it to database.json");
+				TextField input = new TextField();
+				Button okButton = new Button("ok");
+				okButton.setOnAction(new EventHandler<ActionEvent>(){
+					@SuppressWarnings("unchecked")	//this warning has been checked on the allowed input cases and doesn't cause trouble
+					@Override
+					public void handle(ActionEvent e){
+						centerBox.getChildren().clear();
+						ArrayList<String> in = new ArrayList<String>();
+						//reading the contents of the given file
+						try {
+							Reader reader = new FileReader("resources/json/"+input.getText());
+							Gson gson = new GsonBuilder().create();
+							in = gson.fromJson(reader, ArrayList.class);
+							reader.close();
+							
+							
+							//final copy for use in new thread
+							final String inputFinal = input.getText();
+							final ArrayList<String> inFinal = in;
+							//heavy works starts here: new thread so it won't block the GUI
+							new Thread(){
+								@Override
+								public void run(){
+									//get the video models    --- very time-consuming piece of code
+									long startTime = System.currentTimeMillis();
+									YoutubeAccess youtube = new YoutubeAccess(statusMessage);
+									ArrayList<VideoModel> videoData = new ArrayList<VideoModel>();
+									for(String i : inFinal){
+										VideoModel temp = youtube.getVideoModel(i);
+										videoData.add(temp);
+									}
+									
+									//get the content of the old database.json
+									ArrayList<VideoModel> database = new ArrayList<VideoModel>();
+									try {
+										Reader reader2 = new FileReader("resources/json/database.json");
+										Gson gson2 = new GsonBuilder().create();
+										database = gson2.fromJson(reader2, ArrayList.class);
+										reader2.close();
+									} catch (IOException e) {
+										//do nothing with database -> start from an empty one
+									}
+									database.addAll(videoData);
+									
+									//write the new database to database.json
+									try {
+										Writer writer = new FileWriter("resources/json/database.json");
+										Gson gson2 = new GsonBuilder().create();
+										gson2.toJson(database,writer);
+										writer.close();
+									} catch (IOException e) {
+										e.printStackTrace();
+									}
+									
+									//calculate the time used
+									long endTime = System.currentTimeMillis();
+									long timeDif = endTime-startTime;
+									long timeDifMin = timeDif/60000;
+									System.out.println("Minutes used for "+inputFinal+" : "+timeDifMin);
+								}
+							}.start();
+						} catch (IOException e1) {
+							//we get here when the given file can't be opened, doesn't exist
+							statusMessage.setText("WRONG FILENAME: "+input.getText());
+						}
+					}
+				});
+				centerBox.getChildren().addAll(instructions,input,okButton);
+			}
+		});
+		menuBox.getChildren().add(button);
+	}
+	
+	
 	
 	/*
 	 * adds a button for the given given channelname to the given HBOX with the "download videoID" functionality
