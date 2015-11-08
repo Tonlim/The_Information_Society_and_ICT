@@ -205,6 +205,11 @@ public class YoutubeAccess {
             
             //put all this data in the model
             result = new VideoModel(videoID, likes, dislikes, views, comments);
+            
+            //video's without comments are not useful for us
+            if(comments == null || comments.isEmpty()){
+            	return null;
+            }
 
 		} catch(Exception e){
 			e.printStackTrace();
@@ -216,6 +221,8 @@ public class YoutubeAccess {
 				statusText.setText("Done getting comments for "+videoID);
 			}
     	});
+		
+		
 		
 		return result;
 	}

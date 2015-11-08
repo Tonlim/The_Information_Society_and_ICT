@@ -8,6 +8,9 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import model.VideoModel;
 import javafx.application.Application;
@@ -278,12 +281,34 @@ public class Main extends Application {
 								@Override
 								public void run(){
 									//get the video models    --- very time-consuming piece of code
+									//we are using a ThreadPool of 500 threads for this. Each request for a videoID will run in it's own thread.
+									//This speeds up the program as each thread waits for an answer of google. Parallel requests => less time waiting
 									long startTime = System.currentTimeMillis();
 									YoutubeAccess youtube = new YoutubeAccess(statusMessage);
 									ArrayList<VideoModel> videoData = new ArrayList<VideoModel>();
+									ExecutorService threadPool = Executors.newFixedThreadPool(500);
+									
 									for(String i : inFinal){
-										VideoModel temp = youtube.getVideoModel(i);
-										videoData.add(temp);
+										threadPool.execute(new Runnable(){
+											@Override
+											public void run(){
+												VideoModel temp = youtube.getVideoModel(i);
+												if(temp != null) {
+													//make sure only 1 thread can change videoData at any given time
+													synchronized(videoData){
+														videoData.add(temp);
+													}
+												}
+											}
+										});
+									}
+									threadPool.shutdown();
+									try {
+										//wait until all threads are finished with a timeout of 6 hours
+										threadPool.awaitTermination(6, TimeUnit.HOURS);
+									} catch (InterruptedException e1) {
+										e1.printStackTrace();
+										System.err.println("-------- TimeOut of ThreadPool --------");
 									}
 									
 									//get the content of the old database.json
@@ -330,7 +355,7 @@ public class Main extends Application {
 	
 	
 	/*
-	 * adds a button for the given given channelname to the given HBOX with the "download videoID" functionality
+	 * adds a button for the given channelname to the given HBOX with the "download videoID" functionality
 	 */
 	private void addDownloadVideoIdsToHBox(HBox box, String channelName, Text statusMessage){
 		Button button = new Button(channelName);

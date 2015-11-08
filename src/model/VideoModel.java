@@ -7,6 +7,7 @@ public class VideoModel {
 	private String videoId;
 	private int likes;
 	private int dislikes;
+	private boolean over95 = false;
 	private boolean over90 = false;
 	private boolean over70 = false;
 	private boolean over50 = false;
@@ -21,6 +22,9 @@ public class VideoModel {
 		this.views = views;
 		this.comments = comments;
 		double totalRatings = (double) likes + (double) dislikes;
+		if( ( ( (double)likes)/totalRatings) > 0.95 ){
+			over95 = true;
+		}
 		if( ( ( (double)likes)/totalRatings) > 0.9 ){
 			over90 = true;
 		}
