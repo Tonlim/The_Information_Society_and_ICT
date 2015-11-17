@@ -3,10 +3,10 @@ package model;
 import java.util.ArrayList;
 
 public class VideoModel {
-	//values are used when writing to JSON using the GSON library
 	private String videoId;
 	private int likes;
 	private int dislikes;
+	private double ratio;	//number of likes divided by total number of ratings
 	private boolean over95 = false;
 	private boolean over90 = false;
 	private boolean over70 = false;
@@ -22,19 +22,24 @@ public class VideoModel {
 		this.views = views;
 		this.comments = comments;
 		double totalRatings = (double) likes + (double) dislikes;
-		if( ( ( (double)likes)/totalRatings) > 0.95 ){
+		if(totalRatings == 0){	//division by zero check
+			ratio = 0;
+		} else {
+			ratio = ((double) likes)/totalRatings;
+		}
+		if( ratio > 0.95 ){
 			over95 = true;
 		}
-		if( ( ( (double)likes)/totalRatings) > 0.9 ){
+		if( ratio > 0.9 ){
 			over90 = true;
 		}
-		if( ( ( (double)likes)/totalRatings) > 0.7 ){
+		if( ratio > 0.7 ){
 			over70 = true;
 		}
-		if( ( ( (double)likes)/totalRatings) > 0.5 ){
+		if( ratio > 0.5 ){
 			over50 = true;
 		}
-		if( ( ( (double)likes)/totalRatings) > 0.3 ){
+		if( ratio > 0.3 ){
 			over30 = true;
 		}
 	}
@@ -57,5 +62,25 @@ public class VideoModel {
 	
 	public ArrayList<String> getComments(){
 		return comments;
+	}
+	
+	public boolean isOver95(){
+		return over95;
+	}
+	
+	public boolean isOver90(){
+		return over90;
+	}
+	
+	public boolean isOver70(){
+		return over70;
+	}
+	
+	public boolean isOver50(){
+		return over50;
+	}
+	
+	public boolean isOver30(){
+		return over30;
 	}
 }
