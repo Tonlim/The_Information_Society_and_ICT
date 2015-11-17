@@ -30,7 +30,7 @@ import javafx.stage.Stage;
 import com.google.gson.JsonIOException;
 
 import weka.classifiers.Evaluation;
-import weka.classifiers.bayes.NaiveBayesSimple;
+import weka.classifiers.bayes.NaiveBayes;
 import weka.classifiers.trees.J48;
 import weka.core.Attribute;
 import weka.core.FastVector;
@@ -69,102 +69,6 @@ public class Main extends Application {
 		BorderPane.setMargin(center, new Insets(10));
 		center.setStyle("-fx-border-color: gray; -fx-border-width: 2");
 		center.setPadding(new Insets(10));
-		
-		/*
-		//WEKA stuff
-		//info about how the file looks like
-		FastVector atts = new FastVector();
-		atts.addElement(new Attribute("comments", (FastVector) null));
-		FastVector attVals = new FastVector();
-		attVals.addElement("true");
-		attVals.addElement("false");
-		atts.addElement(new Attribute("over95", attVals));
-		
-		
-		Instances data = new Instances("Over95Training",atts,0);
-		data.setClassIndex(data.numAttributes()-1);	//the class is the last attribute
-		
-		//fill with database
-		long amountOfComments = 0;
-		ArrayList<VideoModel> database = JsonAccess.readDatabase();
-		for(VideoModel i : database){
-			//put all comments in 1 string
-			StringBuilder commentsBuilder = new StringBuilder();
-			for(String j : i.getComments()){
-				commentsBuilder.append(j);
-				amountOfComments++;
-			}
-			String comments = commentsBuilder.toString();
-			//add values to Instances
-			double[] values = new double[data.numAttributes()];
-			values[0] = data.attribute(0).addStringValue(comments);
-			if(i.isOver95()){
-				values[1] = attVals.indexOf("true");
-			} else {
-				values[1] = attVals.indexOf("false");
-			}
-			
-			data.add(new Instance(1.0, values));	//1.0 is the weight. Has no influence if we keep it constant
-		}
-		System.out.println(""+amountOfComments+ " comments");
-		
-		
-		Instances output = null;
-		try {
-			//tokenizer
-			NGramTokenizer tokenizer = new NGramTokenizer();
-			tokenizer.setNGramMinSize(1);
-			tokenizer.setNGramMaxSize(1);
-			tokenizer.setDelimiters("[^A-Za-z]"); //everything that isn't a roman letter is a delimiter
-			//tokenizer.setDelimiters("\\W"); //everything that isn't alpha-numeric is a delimiter
-			
-			//filter
-			StringToWordVector bagOfWordMaker = new StringToWordVector();
-			bagOfWordMaker.setInputFormat(data);
-			bagOfWordMaker.setWordsToKeep(1000000);
-			bagOfWordMaker.setLowerCaseTokens(true);
-			bagOfWordMaker.setDoNotOperateOnPerClassBasis(true);
-			bagOfWordMaker.setUseStoplist(true);	//TODO: play with enabling/disabling this
-			//The following option gives a nice database driver error.
-			//Plot twist: This code doesn't invoke a database and runs just fine.
-			//Real problem with using a stemmer: certain stopwords get stemmed and are not getting removed anymore (eg.: this -> thi)
-			//'Solution': We don't care about it as TF-IDF has reduced the significance of common used words by a decent amount.
-			bagOfWordMaker.setStemmer(new SnowballStemmer());	//aka Porter-stemmer
-			bagOfWordMaker.setTokenizer(tokenizer);
-			//the next 2 options together activate TF-IDF
-			bagOfWordMaker.setTFTransform(true); 	//use log of term frequency (TF)
-			bagOfWordMaker.setIDFTransform(true);	//use inverted document frequency (IDF) 
-
-			
-			//apply
-			//output = Filter.useFilter(data, bagOfWordMaker);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		
-		output = ArffAccess.read("test.arff");
-		
-		
-		//save file
-		//ArffAccess.write(output, "test.arff");
-		
-		output.setClassIndex(0);
-
-		
-				
-		
-		//train and cross-validate classifier
-		J48 tree = new J48();
-		tree.setUnpruned(true);
-		
-		try {
-			Evaluation eval = new Evaluation(output);
-			eval.crossValidateModel(tree, output, 10, new Random(1));	//train tree with output for a 10 fold crossValidation, using random seed generator Random(1)
-			
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		*/
 	}
 	
 	public static void main(String[] args) {
@@ -580,7 +484,7 @@ public class Main extends Application {
 						//J48 classifier = new J48();	//TODO: choose a classifier
 						//classifier.setUnpruned(true);
 						
-						NaiveBayesSimple classifier = new NaiveBayesSimple();
+						NaiveBayes classifier = new NaiveBayes();
 						
 						try {
 							Evaluation eval = new Evaluation(data);
