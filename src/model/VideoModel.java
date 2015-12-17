@@ -6,7 +6,8 @@ public class VideoModel {
 	private String videoId;
 	private int likes;
 	private int dislikes;
-	private double ratio;	//number of likes divided by total number of ratings
+	private double likesDislikesRatio;	//number of likes divided by total number of ratings
+	private double likesViewsRatio;
 	private boolean over95 = false;
 	private boolean over90 = false;
 	private boolean over70 = false;
@@ -21,25 +22,26 @@ public class VideoModel {
 		this.dislikes = dislikes;
 		this.views = views;
 		this.comments = comments;
+		this.likesViewsRatio = ((double) likes)/((double) views);
 		double totalRatings = (double) likes + (double) dislikes;
 		if(totalRatings == 0){	//division by zero check
-			ratio = 0;
+			likesDislikesRatio = 0;
 		} else {
-			ratio = ((double) likes)/totalRatings;
+			likesDislikesRatio = ((double) likes)/totalRatings;
 		}
-		if( ratio > 0.95 ){
+		if( likesDislikesRatio > 0.95 ){
 			over95 = true;
 		}
-		if( ratio > 0.9 ){
+		if( likesDislikesRatio > 0.9 ){
 			over90 = true;
 		}
-		if( ratio > 0.7 ){
+		if( likesDislikesRatio > 0.7 ){
 			over70 = true;
 		}
-		if( ratio > 0.5 ){
+		if( likesDislikesRatio > 0.5 ){
 			over50 = true;
 		}
-		if( ratio > 0.3 ){
+		if( likesDislikesRatio > 0.3 ){
 			over30 = true;
 		}
 	}
@@ -58,6 +60,14 @@ public class VideoModel {
 	
 	public int getViews(){
 		return views;
+	}
+	
+	public double getLikesDislikesRatio(){
+		return likesDislikesRatio;
+	}
+	
+	public double getLikesViewsRatio(){
+		return likesViewsRatio;
 	}
 	
 	public ArrayList<String> getComments(){

@@ -202,14 +202,15 @@ public class YoutubeAccess {
     			}
             }
             
+          //filter out unwanted videos
+            if(comments == null || comments.isEmpty() || comments.size()<5 || likes < 10 || views <100){
+            	return null;
+            }
             
             //put all this data in the model
             result = new VideoModel(videoID, likes, dislikes, views, comments);
             
-            //video's without comments are not useful for us
-            if(comments == null || comments.isEmpty()){
-            	return null;
-            }
+            
 
 		} catch(Exception e){
 			e.printStackTrace();
